@@ -1,5 +1,3 @@
-import type { IBook } from '../types/book'
-
 const APIKEY: string = 'AIzaSyCa_zvCtohUTrZFl0rxkNl6fr3A4Fx7YEU'
 
 /**
@@ -11,7 +9,7 @@ const APIKEY: string = 'AIzaSyCa_zvCtohUTrZFl0rxkNl6fr3A4Fx7YEU'
  * @throws {Error} Пробросит дальше для обработкиы
  */
 
-const getBooks = async (url: string): Promise<IBook[]> => {
+const getBooks = async <T>(url: string): Promise<T> => {
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -22,7 +20,7 @@ const getBooks = async (url: string): Promise<IBook[]> => {
 
     if (response.ok) {
       const data = await response.json()
-      return data.items
+      return data.items ?? data
     }
     else {
       throw new Error()

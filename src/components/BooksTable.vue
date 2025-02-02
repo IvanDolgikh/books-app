@@ -50,7 +50,7 @@
           <DetailInfoModal
             v-if="isOpenedInfoModal"
             :bookInfo="selectedBook"
-            @close-modal="isOpenedInfoModal = !isOpenedInfoModal"
+            @close-modal="closeInfoModal"
           />
         </transition>
       </Teleport>
@@ -81,6 +81,7 @@ import Preloader from '../components/Preloader.vue'
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import { useRoute, useRouter } from 'vue-router';
 
 import DetailInfoModal from '../components/BooksDetailInfoModal.vue'
 import EditingModal from '../components/BooksEditingModal.vue'
@@ -89,6 +90,9 @@ import BookSearch from '../components/BooksSearch.vue'
 import type { IBook } from '../types/book'
 
 const toast = useToast();
+
+const route = useRoute();
+const router = useRouter();
 
 const isLoadingData = ref<boolean>(false)
 const isOpenedInfoModal = ref<boolean>(false)
@@ -106,7 +110,6 @@ const url = computed(() => `https://www.googleapis.com/books/v1/volumes?q=${book
  * Управляет состоянием загрузки, обрабатывает ошибки.
  * @async
  * @function handleLoading
- * @template T
  * @param {() => Promise<T>} asyncFn Асинхронная функция для выполнения.
  * @returns {Promise<T | undefined>} Результат выполнения асинхронной функции или undefined в случае ошибки.
  * @throws {Error} Если асинхронная функция выбрасывает ошибку.
@@ -133,7 +136,7 @@ const handleLoading = async <T>(asyncFn: () => Promise<T>): Promise<T | undefine
  */
 const loadMoreResults = async () => {
   startIndex.value += 10;
-  const newBooks = await handleLoading(() => getBooks(url.value));
+  const newBooks = await handleLoading(() => getBooks<IBook[]>(url.value));
   if (newBooks) {
     books.value = [...books.value, ...newBooks];
   }
@@ -142,11 +145,17 @@ const loadMoreResults = async () => {
 const openInfoModal = (item: IBook) => {
   isOpenedInfoModal.value = !isOpenedInfoModal.value
   selectedBook.value = item
+  router.push({ query: { bookId: item.id } });
 }
 
 const openEditingModal = (item: IBook) => {
   isOpenedEditingModal.value = !isOpenedEditingModal.value
   selectedBook.value = item
+}
+
+const closeInfoModal = () => {
+  isOpenedInfoModal.value = !isOpenedInfoModal.value
+  router.push({ query: {} });
 }
 
 /**
@@ -169,7 +178,7 @@ const updateBook = (book: IBook) => {
 const searchBook = async (title: string) => {
   startIndex.value = 0;
   bookTitle.value = title;
-  const foundBooks = await handleLoading(() => getBooks(url.value));
+  const foundBooks = await handleLoading(() => getBooks<IBook[]>(url.value));
   if (foundBooks) {
     books.value = foundBooks;
   }
@@ -179,11 +188,27 @@ const showError = () => {
   toast.add({ severity: 'error', summary: 'Ошибка', detail: 'Перезагрузите страницу или попробуйте позже', life: 3000 });
 };
 
+/**
+ * Проверяет есть ли параметр в адресе, если есть, то делает запрос к апи и открывает модальное окно
+ * @async
+ * @function checkRouteQuery
+ */
+const checkRouteQuery = async () => {
+  if (route.query.bookId) {
+    const book = await handleLoading(() => getBooks<IBook>(`https://www.googleapis.com/books/v1/volumes/${route.query.bookId}?key=${APIKEY}`));
+    if (book) {
+      selectedBook.value = book
+      isOpenedInfoModal.value = !isOpenedInfoModal.value
+    }
+  }
+}
+
 onMounted(async () => {
-  const initialBooks = await handleLoading(() => getBooks(url.value));
+  const initialBooks = await handleLoading(() => getBooks<IBook[]>(url.value));
   if (initialBooks) {
     books.value = initialBooks;
   }
+  checkRouteQuery()
 });
 </script>
 
