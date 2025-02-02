@@ -82,9 +82,9 @@ import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 
-import DetailInfoModal from '../components/DetailInfoModal.vue'
-import EditingModal from '../components/EditingModal.vue'
-import BookSearch from '../components/BookSearch.vue'
+import DetailInfoModal from '../components/BooksDetailInfoModal.vue'
+import EditingModal from '../components/BooksEditingModal.vue'
+import BookSearch from '../components/BooksSearch.vue'
 
 import type { IBook } from '../types/book'
 
